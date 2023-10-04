@@ -38,36 +38,36 @@ void Stepper::disable(){
 Stepper_array::Stepper_array(Register_74HC595 reg_, Stepper *mot1_, Stepper *mot2_, Stepper *mot3_, Stepper *mot4_){
     reg = reg_;
 
-    mot1 = mot1_;
-    mot2 = mot2_;
-    mot3 = mot3_;
-    mot4 = mot4_;
+    motors[0] = mot1_;
+    motors[1] = mot2_;
+    motors[2] = mot3_;
+    motors[3] = mot4_;
 
-    def1 = (mot1 != nullptr);
-    def2 = (mot1 != nullptr);
-    def3 = (mot1 != nullptr);
-    def4 = (mot1 != nullptr);
+    for(int i = 0; i < 4; i++)
+        def[i] = (motors[i] != nullptr);
 }
 
-void Stepper_array::step(Stepper *mot, bool dir){
-    state |= (1 << mot -> step_byte);
-    state |= (dir << mot -> dir_byte);
+void Stepper_array::step(uint8_t id){
+    if(id < 0 || id >= 4)
+        return;
+    
+    if(micros() - last_step[id] <= timeouts[id])
+        return;
+    else
+        last_step[id] = micros();
+
+
+    state &= ~(1 << motors[id] -> dir_byte);
+
+    state |= (1 << motors[id] -> step_byte);
+    state |= (dirs[id] << motors[id] -> dir_byte);
 }
 
-void Stepper_array::step1(bool dir){
-    step(mot1, dir);
-}
+void Stepper_array::step(uint8_t id, bool dir){
+    state &= ~(1 << motors[id] -> dir_byte);
 
-void Stepper_array::step2(bool dir){
-    step(mot2, dir);
-}
-
-void Stepper_array::step3(bool dir){
-    step(mot3, dir);
-}
-
-void Stepper_array::step4(bool dir){
-    step(mot4, dir);
+    state |= (1 << motors[id] -> step_byte);
+    state |= (dir << motors[id] -> dir_byte);
 }
 
 void Stepper_array::send(){
@@ -75,16 +75,26 @@ void Stepper_array::send(){
     shiftOut(reg.data_pin, reg.sck_pin, MSBFIRST, state);
     digitalWrite(reg.latch_pin, HIGH);
 
-    delayMicroseconds(1);
+    delayMicroseconds(2);
 
-    state &= ~(1 << mot1 -> step_byte);
-    state &= ~(1 << mot2 -> step_byte);
-    state &= ~(1 << mot3 -> step_byte);
-    state &= ~(1 << mot4 -> step_byte);
+    for(int i = 0; i < 4; i++)
+        state &= ~(1 << motors[i] -> step_byte);
 
     digitalWrite(reg.latch_pin, LOW);
     shiftOut(reg.data_pin, reg.sck_pin, MSBFIRST, state);
     digitalWrite(reg.latch_pin, HIGH);
+}
 
-    state = 0;
+void Stepper_array::set_speed(uint8_t id, double speed){
+    if(speed < 0)
+        dirs[id] = 0;
+    else
+        dirs[id] = 1;
+    
+    speed = abs(speed);
+
+    if(speed == 0)
+        timeouts[id] = INT_MAX;
+    else
+        timeouts[id] = 1e6 / speed / STEPS_PER_MM - 2;
 }

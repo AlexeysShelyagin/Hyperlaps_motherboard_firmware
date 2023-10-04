@@ -1,12 +1,30 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
+#include <Arduino.h>
+
+#define STATIC_GAMEPAD_ADDR
+
+
+
+#ifdef STATIC_GAMEPAD_ADDR
+
 static uint8_t gamepad1_mac[] = {0x98, 0xF4, 0xAB, 0xF1, 0xF6, 0x52};
 static uint8_t gamepad2_mac[] = {0x68, 0xC6, 0x3A, 0xFC, 0xCD, 0xAA};
 static uint8_t gamepad3_mac[] = {0xEC, 0xFA, 0xBC, 0xCB, 0x86, 0xA3};
 static uint8_t gamepad4_mac[] = {0x8C, 0xAA, 0xB5, 0x06, 0xEB, 0x9A};
 
+#else
 
+#define DYNAMIC_GAMEPAD_MAC
+
+#endif
+
+#define DEFAULT_LASER_THRESHOLD 4000
+
+#define STEPS_PER_MM 50
+#define DEFAULT_SPEED 200
+#define START_SPEED 50
 
 #define LATCH_PIN 27
 #define SCK_PIN 12

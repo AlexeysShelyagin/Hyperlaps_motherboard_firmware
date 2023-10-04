@@ -1,17 +1,17 @@
 #include "game_wifi.h"
 
+namespace Recieve{
+    uint8_t *recieved_data;
+    bool updates_available;
+}
+
 void Game_wifi::on_data_sent(const uint8_t *mac, const esp_now_send_status_t status){
     //Serial.println("sent");
 }
 
 void Game_wifi::on_data_recv(const uint8_t *mac, const uint8_t *incoming_data, int len){
-    Player_data data;
-    memcpy(&data, incoming_data, sizeof(Player_data));
-    Serial.print(data.id);
-    Serial.print(": ");
-    Serial.print(data.stick);
-    Serial.print(", ");
-    Serial.println(data.button);
+    Recieve::recieved_data = const_cast < uint8_t* > (incoming_data);
+    Recieve::updates_available = true;
 }
 
 bool Game_wifi::init(){
@@ -34,11 +34,39 @@ int8_t Game_wifi::add_gamepad(uint8_t *gamepad_mac){
     gamepads[added_n].channel = 0;
     gamepads[added_n].encrypt = false;
 
-    esp_now_add_peer(&gamepads[added_n]);
+    if(esp_now_add_peer(&gamepads[added_n]) == ESP_OK){
+        connected[added_n] = true;
+    }
+    else{
+        connected[added_n] = false;
+        return -1;
+    }
     
     added_n++;
 
     return added_n - 1;
+}
+
+bool Game_wifi::set_gamepad(uint8_t *gamepad_mac, uint8_t id){
+    if(id < 0 || id > 3)
+        return false;
+
+    esp_now_del_peer(gamepads[id].peer_addr);
+    connected[id] = false;
+
+    memcpy(gamepads[id].peer_addr, gamepad_mac, 6);
+    gamepads[id].channel = 0;
+    gamepads[id].encrypt = false;
+
+    if(esp_now_add_peer(&gamepads[id]) == ESP_OK){
+        connected[id] = true;
+    }
+    else{
+        connected[id] = false;
+        return false;
+    }
+    
+    return true;
 }
 
 void Game_wifi::send_score(uint8_t score, uint8_t id){
@@ -46,6 +74,24 @@ void Game_wifi::send_score(uint8_t score, uint8_t id){
     resp.score = score;
     resp.id = id;
     for(int i = 0; i < 4; i++){
-        esp_now_send(gamepads[i].peer_addr, (uint8_t *) &resp, sizeof(Motherboard_response));
+        if(connected[i])
+            esp_now_send(gamepads[i].peer_addr, (uint8_t *) &resp, sizeof(Motherboard_response));
     }
+}
+
+Game_wifi::Updates Game_wifi::get_updates(){
+    if(!Recieve::updates_available)
+        return Updates();
+    
+    Recieve::updates_available = false;
+
+    Player_data data;
+    memcpy(&data, Recieve::recieved_data, sizeof(Player_data));
+
+    Updates res;
+    res.success = true;
+    res.id = data.id;
+    res.stick = data.stick;
+    res.button = data.button;
+    return res;
 }

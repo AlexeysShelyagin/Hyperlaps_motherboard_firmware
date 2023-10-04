@@ -16,6 +16,8 @@ Stepper_array motors(steppers_reg, &motor1, &motor2, &motor3, &motor4);
 
 Game_wifi wifi;
 
+int solenoids[] = {SOL1, SOL2, SOL3, SOL4};
+
 void setup() {
     Serial.begin(115200);
 
@@ -34,18 +36,56 @@ void setup() {
     pinMode(ENDSTOP3, INPUT);
     pinMode(ENDSTOP4, INPUT);
 
+    pinMode(MOTOR_ENABLE, OUTPUT);
+    //digitalWrite(MOTOR_ENABLE, 1);
+
     wifi.init();
+
+#ifdef STATIC_GAMEPAD_ADDR
     wifi.add_gamepad(gamepad1_mac);
     wifi.add_gamepad(gamepad2_mac);
     wifi.add_gamepad(gamepad3_mac);
     wifi.add_gamepad(gamepad4_mac);
+#endif
 
     Serial.println("initialized");
 }
 
-uint8_t a = 0;
+double speeds[4] = {DEFAULT_SPEED, DEFAULT_SPEED, DEFAULT_SPEED, DEFAULT_SPEED};
+int8_t stick_states[4] = {0, 0, 0, 0};
+uint64_t last_accel_call[4] = {0, 0, 0, 0};
+
 void loop() {
-    wifi.send_score(a, 0);
-    a = (a + 1) % 11;
-    delay(1000);
+    Game_wifi::Updates updates = wifi.get_updates();
+
+    if(updates.success){
+        /*
+        Serial.print(updates.id);
+        Serial.print(": ");
+        Serial.print(updates.stick);
+        Serial.print(" ");
+        Serial.println(updates.button);
+        */
+
+        digitalWrite(solenoids[updates.id], updates.button);
+
+        stick_states[updates.id] = updates.stick;
+        speeds[updates.id] = START_SPEED;
+    }
+
+    for(int i = 0; i < 4; i++){
+        if(speeds[i] < DEFAULT_SPEED){
+            if(micros() - last_accel_call[i] > 1000){
+                motors.set_speed(i, stick_states[i] * speeds[i]);
+                speeds[i] += 1;
+                last_accel_call[i] = micros();
+            }
+        }
+    }
+
+    motors.step(0);
+    motors.step(1);
+    motors.step(2);
+    motors.step(3);
+    motors.send();
 }
