@@ -4,6 +4,7 @@
 #include "config.h"
 #include "stepper.h"
 #include "game_wifi.h"
+#include "modules.h"
 
 Register_74HC595 steppers_reg(LATCH_PIN, SCK_PIN, DATA_PIN);
 
@@ -13,10 +14,18 @@ Stepper motor3(steppers_reg, STEP3_BYTE, DIR3_BYTE, MOTOR_ENABLE);
 Stepper motor4(steppers_reg, STEP4_BYTE, DIR4_BYTE, MOTOR_ENABLE);
 
 Stepper_array motors(steppers_reg, &motor1, &motor2, &motor3, &motor4);
+Endstop_array endstops(&motors, ENDSTOP1, ENDSTOP2, ENDSTOP3, ENDSTOP4);
+
+Solenoid solenoids[] = {
+     Solenoid(SOL1),
+     Solenoid(SOL2),
+     Solenoid(SOL3),
+     Solenoid(SOL4)
+};
+
+Goal_sensor goal_sensor(DETECT1, DETECT2, DETECT3, DETECT4, DEFAULT_LASER_THRESHOLD);
 
 Game_wifi wifi;
-
-int solenoids[] = {SOL1, SOL2, SOL3, SOL4};
 
 void setup() {
     Serial.begin(115200);
@@ -39,6 +48,8 @@ void setup() {
     pinMode(MOTOR_ENABLE, OUTPUT);
     //digitalWrite(MOTOR_ENABLE, 1);
 
+    endstops.invert_input();
+
     wifi.init();
 
 #ifdef STATIC_GAMEPAD_ADDR
@@ -54,23 +65,23 @@ void setup() {
 double speeds[4] = {DEFAULT_SPEED, DEFAULT_SPEED, DEFAULT_SPEED, DEFAULT_SPEED};
 int8_t stick_states[4] = {0, 0, 0, 0};
 uint64_t last_accel_call[4] = {0, 0, 0, 0};
+int8_t goal_id;
 
 void loop() {
     Game_wifi::Updates updates = wifi.get_updates();
 
-    if(updates.success){
-        /*
-        Serial.print(updates.id);
-        Serial.print(": ");
-        Serial.print(updates.stick);
-        Serial.print(" ");
+    if(updates.success){        
+        if(updates.button)
+            solenoids[updates.id].fire();
         Serial.println(updates.button);
-        */
-
-        digitalWrite(solenoids[updates.id], updates.button);
 
         stick_states[updates.id] = updates.stick;
         speeds[updates.id] = START_SPEED;
+    }
+
+    goal_id = goal_sensor.check();
+    if(goal_id != -1){
+
     }
 
     for(int i = 0; i < 4; i++){
@@ -81,7 +92,11 @@ void loop() {
                 last_accel_call[i] = micros();
             }
         }
+
+        solenoids[i].update();
     }
+
+    endstops.check();
 
     motors.step(0);
     motors.step(1);

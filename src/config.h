@@ -26,6 +26,9 @@ static uint8_t gamepad4_mac[] = {0x8C, 0xAA, 0xB5, 0x06, 0xEB, 0x9A};
 #define DEFAULT_SPEED 200
 #define START_SPEED 50
 
+#define SOLENOID_SAFE_FIRE_TIME 70
+#define SOLENOID_CALLDOWN 150
+
 #define LATCH_PIN 27
 #define SCK_PIN 12
 #define DATA_PIN 14

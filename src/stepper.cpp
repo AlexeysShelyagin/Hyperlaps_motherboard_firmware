@@ -90,11 +90,16 @@ void Stepper_array::set_speed(uint8_t id, double speed){
         dirs[id] = 0;
     else
         dirs[id] = 1;
-    
+
+    speeds[id] = speed;
     speed = abs(speed);
 
     if(speed == 0)
         timeouts[id] = INT_MAX;
     else
         timeouts[id] = 1e6 / speed / STEPS_PER_MM - 2;
+}
+
+double Stepper_array::get_speed(uint8_t id){
+    return speeds[id];
 }

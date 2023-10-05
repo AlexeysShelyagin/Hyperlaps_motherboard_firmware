@@ -2,8 +2,8 @@
 #define STEPPER_H
 
 #include <Arduino.h>
-#include "config.h"
 #include <limits.h>
+#include "config.h"
 
 class Register_74HC595{
 public:
@@ -35,6 +35,7 @@ class Stepper_array{
     bool dirs[4];
 
     int timeouts[4] = {INT_MAX, INT_MAX, INT_MAX, INT_MAX};
+    double speeds[4] = {0, 0, 0, 0};
     uint64_t last_step[4] = {0, 0, 0, 0};
 
     uint8_t state = 0;
@@ -45,6 +46,7 @@ public:
     void step(uint8_t id, bool dir);
 
     void set_speed(uint8_t id, double speed);
+    double get_speed(uint8_t id);
 
     void send();
 };
