@@ -51,16 +51,21 @@ void Stepper_array::step(uint8_t id){
     if(id < 0 || id >= 4)
         return;
     
-    if(micros() - last_step[id] <= timeouts[id])
+    if(timeouts[id] != INT_MAX)
+        steps_to_do[id] += min((double) (micros() - last_step[id]) / timeouts[id], 1.0);
+    if(steps_to_do[id] < 1)
         return;
-    else
-        last_step[id] = micros();
+
+    steps_to_do[id] = max(steps_to_do[id] - 1, 0.0);
+
+    last_step[id] = micros();
 
 
     state &= ~(1 << motors[id] -> dir_byte);
 
     state |= (1 << motors[id] -> step_byte);
     state |= (dirs[id] << motors[id] -> dir_byte);
+
 }
 
 void Stepper_array::step(uint8_t id, bool dir){

@@ -67,16 +67,19 @@ int8_t stick_states[4] = {0, 0, 0, 0};
 uint64_t last_accel_call[4] = {0, 0, 0, 0};
 int8_t goal_id;
 
+uint64_t last = 0;
+
 void loop() {
     Game_wifi::Updates updates = wifi.get_updates();
 
     if(updates.success){        
         if(updates.button)
             solenoids[updates.id].fire();
-        Serial.println(updates.button);
 
-        stick_states[updates.id] = updates.stick;
-        speeds[updates.id] = START_SPEED;
+        if(stick_states[updates.id] != updates.stick){
+            stick_states[updates.id] = updates.stick;
+            speeds[updates.id] = START_SPEED;
+        }
     }
 
     goal_id = goal_sensor.check();
@@ -86,7 +89,7 @@ void loop() {
 
     for(int i = 0; i < 4; i++){
         if(speeds[i] < DEFAULT_SPEED){
-            if(micros() - last_accel_call[i] > 1000){
+            if(micros() - last_accel_call[i] > 700){
                 motors.set_speed(i, stick_states[i] * speeds[i]);
                 speeds[i] += 1;
                 last_accel_call[i] = micros();

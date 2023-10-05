@@ -2,6 +2,7 @@
 #define MODULES_H
 
 #include <Arduino.h>
+#include "stepper.h"
 
 class Solenoid{
     int pin;
