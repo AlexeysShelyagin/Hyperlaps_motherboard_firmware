@@ -18,11 +18,13 @@ public:
 class Goal_sensor{
     int pins[4];
     double threshold;
+    uint16_t buffer[4][LASER_BUFFER_SIZE];
+
     bool inverted = false;
 public:
     Goal_sensor(int pin1_, int pin2_, int pin3_, int pin4_, uint16_t threshold_);
 
-    int8_t check();
+    bool check(uint8_t id);
 };
 
 class Endstop_array{

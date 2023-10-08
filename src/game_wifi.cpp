@@ -93,5 +93,6 @@ Game_wifi::Updates Game_wifi::get_updates(){
     res.id = data.id;
     res.stick = data.stick;
     res.button = data.button;
+
     return res;
 }

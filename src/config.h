@@ -21,6 +21,7 @@ static uint8_t gamepad4_mac[] = {0x8C, 0xAA, 0xB5, 0x06, 0xEB, 0x9A};
 #endif
 
 #define DEFAULT_LASER_THRESHOLD 4050
+#define LASER_BUFFER_SIZE 3
 
 #define STEPS_PER_MM 50
 #define DEFAULT_SPEED 80

@@ -68,16 +68,17 @@ void setup() {
 double speeds[4] = {DEFAULT_SPEED, DEFAULT_SPEED, DEFAULT_SPEED, DEFAULT_SPEED};
 int8_t stick_states[4] = {0, 0, 0, 0};
 uint64_t last_accel_call[4] = {0, 0, 0, 0};
-int8_t goal_id;
+bool is_goal;
+//int8_t goal_id = -1;
 
-uint8_t iteration = 0;
+uint64_t iteration = 0, iteration_goal = 0;
+uint8_t goal_check_id = 0;
 
 void loop() {
     if(iteration % 50 == 0){
         Game_wifi::Updates updates = wifi.get_updates();
-
+    
         if(updates.success){  
-            Serial.println("aaa");      
             if(updates.button)
                 solenoids[updates.id].fire();
 
@@ -90,25 +91,34 @@ void loop() {
             }
         }
 
-        goal_id = goal_sensor.check();
-        if(goal_id != -1){
-            bool paused = true;
-            wifi.send_score(-1, goal_id);
-            while(paused){
-                Game_wifi::Updates updates = wifi.get_updates();
-                if(updates.success && updates.button && updates.id == goal_id)
-                    paused = false;
-                
-                delay(10);
-            }
-        }
-
         endstops.check();
 
         for(int i = 0; i < 4; i++)
             solenoids[i].update();
 
         iteration = 0;
+    }
+
+    if(iteration_goal % 100 == 0){
+        is_goal = goal_sensor.check(goal_check_id);
+        if(is_goal){
+            bool paused = true;
+            wifi.send_score(-1, goal_check_id);
+            
+            while(paused){
+                Game_wifi::Updates updates = wifi.get_updates();
+                if(updates.success && updates.button && updates.id == goal_check_id)
+                    paused = false;
+                
+                delay(10);
+            }
+            
+        }
+
+        goal_check_id++;
+        goal_check_id %= 4;
+
+        iteration_goal = 0;
     }
 
     for(int i = 0; i < 4; i++){
@@ -128,4 +138,5 @@ void loop() {
     motors.send();
 
     iteration++;
+    iteration_goal++;
 }

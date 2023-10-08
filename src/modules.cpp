@@ -30,16 +30,29 @@ Goal_sensor::Goal_sensor(int pin1_, int pin2_, int pin3_, int pin4_, uint16_t th
     pins[2] = pin3_;
     pins[3] = pin4_;
     threshold = threshold_;
+
+    for(int i = 0; i < 4; i++){
+        for(int j = 0; j < LASER_BUFFER_SIZE; j++)
+            buffer[i][j] = 4096;
+    }
 }
 
-int8_t Goal_sensor::check(){
-    for(int i = 0; i < 4; i++){
-        if(analogRead(pins[i]) < threshold){
-            return i;
+bool Goal_sensor::check(uint8_t id){
+    for(int j = 1; j < LASER_BUFFER_SIZE; j++)
+        buffer[id][j] = buffer[id][j - 1];
+    
+    buffer[id][0] = analogRead(pins[id]);
+
+    if(buffer[id][0] < threshold){
+        for(int j = 0; j < LASER_BUFFER_SIZE; j++){
+            if(buffer[id][j] >= threshold)
+                return false;
         }
+        
+        return true;
     }
 
-    return -1;
+    return false;
 }
 
 Endstop_array::Endstop_array(Stepper_array *motors_, int end1_pin, int end2_pin, int end3_pin, int end4_pin){
