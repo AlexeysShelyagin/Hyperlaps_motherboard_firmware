@@ -62,9 +62,12 @@ void Endstop_array::check(){
             if(current_speed == stopped_dir[i] || stopped_dir[i] == 0){
                 stopped_dir[i] = current_speed / abs(current_speed);
                 motors -> set_speed(i, 0);
+                motors -> lock_dir(i, stopped_dir[i]);
             }
         }
-        else
+        else{
             stopped_dir[i] = 0;
+            motors -> unlock_dir(i);
+        }
     }
 }

@@ -47,8 +47,12 @@ Stepper_array::Stepper_array(Register_74HC595 reg_, Stepper *mot1_, Stepper *mot
         def[i] = (motors[i] != nullptr);
 }
 
+bool Stepper_array::check_id(uint8_t id){
+    return (id >= 0 || id < 4);
+}
+
 void Stepper_array::step(uint8_t id){
-    if(id < 0 || id >= 4)
+    if(!check_id(id))
         return;
     
     if(timeouts[id] != INT_MAX)
@@ -61,6 +65,7 @@ void Stepper_array::step(uint8_t id){
     last_step[id] = micros();
 
 
+
     state &= ~(1 << motors[id] -> dir_byte);
 
     state |= (1 << motors[id] -> step_byte);
@@ -68,12 +73,14 @@ void Stepper_array::step(uint8_t id){
 
 }
 
+/*
 void Stepper_array::step(uint8_t id, bool dir){
     state &= ~(1 << motors[id] -> dir_byte);
 
     state |= (1 << motors[id] -> step_byte);
     state |= (dir << motors[id] -> dir_byte);
 }
+*/
 
 void Stepper_array::send(){
     digitalWrite(reg.latch_pin, LOW);
@@ -91,6 +98,13 @@ void Stepper_array::send(){
 }
 
 void Stepper_array::set_speed(uint8_t id, double speed){
+    if(!check_id(id))
+        return;
+    else;
+
+    if(speed != 0 && locked_dirs[id] == speed / abs(speed))
+        return;
+
     if(speed < 0)
         dirs[id] = 0;
     else
@@ -106,5 +120,22 @@ void Stepper_array::set_speed(uint8_t id, double speed){
 }
 
 double Stepper_array::get_speed(uint8_t id){
+    if(!check_id(id))
+        return 0;
+    
     return speeds[id];
+}
+
+void Stepper_array::lock_dir(uint8_t id, int8_t dir){
+    if(!check_id(id))
+        return;
+    
+    locked_dirs[id] = dir;
+}
+
+void Stepper_array::unlock_dir(uint8_t id){
+    if(!check_id(id))
+        return;
+    
+    locked_dirs[id] = 0;
 }

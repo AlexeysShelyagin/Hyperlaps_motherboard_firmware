@@ -12,7 +12,7 @@ class Game_wifi{
 
     struct Motherboard_response{
         uint8_t id = 0;
-        uint8_t score = 0;
+        int8_t score = 0;
     };
 
     struct Player_data{
@@ -39,7 +39,7 @@ public:
     int8_t add_gamepad(uint8_t *gamepad_mac);
     bool set_gamepad(uint8_t *gamepad_mac, uint8_t id);
 
-    void send_score(uint8_t score, uint8_t id);
+    void send_score(int8_t score, uint8_t id);
     Updates get_updates();
 };
 

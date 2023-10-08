@@ -69,7 +69,7 @@ bool Game_wifi::set_gamepad(uint8_t *gamepad_mac, uint8_t id){
     return true;
 }
 
-void Game_wifi::send_score(uint8_t score, uint8_t id){
+void Game_wifi::send_score(int8_t score, uint8_t id){
     Motherboard_response resp;
     resp.score = score;
     resp.id = id;
