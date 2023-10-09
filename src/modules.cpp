@@ -65,6 +65,13 @@ Endstop_array::Endstop_array(Stepper_array *motors_, int end1_pin, int end2_pin,
 
 void Endstop_array::invert_input(){
     inverted = !inverted;
+    for(int i = 0; i < 4; i++)
+        initial_unpressed[i] = !initial_unpressed[i];
+}
+
+void Endstop_array::check_initial(){
+    for(int i = 0; i < 4; i++)
+        initial_unpressed[i] = !digitalRead(pins[i]);
 }
 
 void Endstop_array::check(){
@@ -72,15 +79,18 @@ void Endstop_array::check(){
         double current_speed = motors -> get_speed(i);
 
         if(digitalRead(pins[i]) != inverted){
-            if(current_speed == stopped_dir[i] || stopped_dir[i] == 0){
-                stopped_dir[i] = current_speed / abs(current_speed);
-                motors -> set_speed(i, 0);
-                motors -> lock_dir(i, stopped_dir[i]);
+            if(initial_unpressed[i]){
+                if(current_speed == stopped_dir[i] || stopped_dir[i] == 0){
+                    stopped_dir[i] = current_speed / abs(current_speed);
+                    motors -> set_speed(i, 0);
+                    motors -> lock_dir(i, stopped_dir[i]);
+                }
             }
         }
         else{
             stopped_dir[i] = 0;
             motors -> unlock_dir(i);
+            initial_unpressed[i] = true;
         }
     }
 }

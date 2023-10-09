@@ -48,6 +48,7 @@ void setup() {
     pinMode(MOTOR_ENABLE, OUTPUT);
     //digitalWrite(MOTOR_ENABLE, 1);
 
+    endstops.check_initial();
     endstops.invert_input();
 
     wifi.init();
@@ -78,6 +79,7 @@ void loop() {
     if(iteration % 50 == 0){
         Game_wifi::Updates updates = wifi.get_updates();
 
+#ifndef LASER_DISABLE
         if(iteration % 100 == 0){
             is_goal = goal_sensor.check(goal_check_id);
             if(is_goal){
@@ -102,6 +104,7 @@ void loop() {
             goal_check_id++;
             goal_check_id %= 4;
         }
+#endif
 
         if(updates.success){  
             if(updates.button)

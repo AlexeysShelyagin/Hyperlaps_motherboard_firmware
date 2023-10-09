@@ -5,7 +5,7 @@
 
 #define STATIC_GAMEPAD_ADDR
 
-
+#define LASER_DISABLE
 
 #ifdef STATIC_GAMEPAD_ADDR
 
@@ -29,7 +29,7 @@ static uint8_t gamepad4_mac[] = {0x8C, 0xAA, 0xB5, 0x06, 0xEB, 0x9A};
 
 #define INVERT_MOTORS 1
 
-#define SOLENOID_SAFE_FIRE_TIME 70
+#define SOLENOID_SAFE_FIRE_TIME 120
 #define SOLENOID_CALLDOWN 150
 
 #define LATCH_PIN 27

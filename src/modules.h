@@ -31,11 +31,13 @@ class Endstop_array{
     Stepper_array *motors;
     int pins[4];
     int8_t stopped_dir[4];
+    bool initial_unpressed[4];
     bool inverted = false;
 public:
     Endstop_array(Stepper_array *motors_, int end1_pin, int end2_pin, int end3_pin, int end4_pin);
 
     void invert_input();
+    void check_initial();
 
     void check();
 };
