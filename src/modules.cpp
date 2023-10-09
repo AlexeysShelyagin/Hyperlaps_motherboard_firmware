@@ -77,14 +77,13 @@ void Endstop_array::check_initial(){
 void Endstop_array::check(){
     for(int i = 0; i < 4; i++){
         double current_speed = motors -> get_speed(i);
+        int8_t current_dir = current_speed / abs(current_speed);
 
         if(digitalRead(pins[i]) != inverted){
-            if(initial_unpressed[i]){
-                if(current_speed == stopped_dir[i] || stopped_dir[i] == 0){
-                    stopped_dir[i] = current_speed / abs(current_speed);
-                    motors -> set_speed(i, 0);
-                    motors -> lock_dir(i, stopped_dir[i]);
-                }
+            if(initial_unpressed[i] && stopped_dir[i] == 0){
+                stopped_dir[i] = current_dir;
+                motors -> set_speed(i, 0);
+                motors -> lock_dir(i, stopped_dir[i]);
             }
         }
         else{
