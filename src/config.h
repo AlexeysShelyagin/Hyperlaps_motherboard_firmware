@@ -29,8 +29,12 @@ static uint8_t gamepad4_mac[] = {0x8C, 0xAA, 0xB5, 0x06, 0xEB, 0x9A};
 
 #define INVERT_MOTORS 1
 
-#define SOLENOID_SAFE_FIRE_TIME 120
-#define SOLENOID_CALLDOWN 150
+#define SOLENOID_SAFE_FIRE_TIME 200
+#define SOLENOID_CALLDOWN 200
+
+#define ENDSTOP_CHECK_TIME 200
+
+
 
 #define LATCH_PIN 27
 #define SCK_PIN 12

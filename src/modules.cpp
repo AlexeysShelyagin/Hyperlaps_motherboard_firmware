@@ -82,14 +82,24 @@ void Endstop_array::check(){
         if(digitalRead(pins[i]) != inverted){
             if(initial_unpressed[i] && stopped_dir[i] == 0){
                 stopped_dir[i] = current_dir;
-                motors -> set_speed(i, 0);
-                motors -> lock_dir(i, stopped_dir[i]);
+
+                if(waiting_to_stop[i] != 0)
+                    waiting_to_stop[i] = millis() + ENDSTOP_CHECK_TIME;
             }
         }
         else{
             stopped_dir[i] = 0;
             motors -> unlock_dir(i);
             initial_unpressed[i] = true;
+
+            waiting_to_stop[i] = 0;
+        }
+
+        if(waiting_to_stop[i] != 0 && millis() >= waiting_to_stop[i]){
+            motors -> set_speed(i, 0);
+            motors -> lock_dir(i, stopped_dir[i]);
+
+            waiting_to_stop[i] = 0;
         }
     }
 }

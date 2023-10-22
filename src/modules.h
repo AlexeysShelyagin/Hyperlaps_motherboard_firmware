@@ -33,6 +33,8 @@ class Endstop_array{
     int8_t stopped_dir[4];
     bool initial_unpressed[4];
     bool inverted = false;
+
+    uint64_t waiting_to_stop[4];
 public:
     Endstop_array(Stepper_array *motors_, int end1_pin, int end2_pin, int end3_pin, int end4_pin);
 
