@@ -5,7 +5,7 @@
 
 #define STATIC_GAMEPAD_ADDR
 
-
+#define LASER_DISABLE
 
 #ifdef STATIC_GAMEPAD_ADDR
 
@@ -20,14 +20,21 @@ static uint8_t gamepad4_mac[] = {0x8C, 0xAA, 0xB5, 0x06, 0xEB, 0x9A};
 
 #endif
 
-#define DEFAULT_LASER_THRESHOLD 4000
+#define DEFAULT_LASER_THRESHOLD 4050
+#define LASER_BUFFER_SIZE 3
 
 #define STEPS_PER_MM 50
-#define DEFAULT_SPEED 350
+#define DEFAULT_SPEED 80
 #define START_SPEED 0
 
-#define SOLENOID_SAFE_FIRE_TIME 70
-#define SOLENOID_CALLDOWN 150
+#define INVERT_MOTORS 1
+
+#define SOLENOID_SAFE_FIRE_TIME 200
+#define SOLENOID_CALLDOWN 200
+
+#define ENDSTOP_CHECK_TIME 200
+
+
 
 #define LATCH_PIN 27
 #define SCK_PIN 12
@@ -44,10 +51,10 @@ static uint8_t gamepad4_mac[] = {0x8C, 0xAA, 0xB5, 0x06, 0xEB, 0x9A};
 #define DIR2_BYTE 1
 #define STEP2_BYTE 0
 
-#define DETECT1 39
+#define DETECT1 36
 #define DETECT2 35
 #define DETECT3 32
-#define DETECT4 36
+#define DETECT4 39
 
 #define SOL1 13
 #define SOL2 19

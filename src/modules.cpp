@@ -30,16 +30,29 @@ Goal_sensor::Goal_sensor(int pin1_, int pin2_, int pin3_, int pin4_, uint16_t th
     pins[2] = pin3_;
     pins[3] = pin4_;
     threshold = threshold_;
+
+    for(int i = 0; i < 4; i++){
+        for(int j = 0; j < LASER_BUFFER_SIZE; j++)
+            buffer[i][j] = 4096;
+    }
 }
 
-int8_t Goal_sensor::check(){
-    for(int i = 0; i < 4; i++){
-        if(analogRead(pins[i]) < threshold){
-            return i;
+bool Goal_sensor::check(uint8_t id){
+    for(int j = 1; j < LASER_BUFFER_SIZE; j++)
+        buffer[id][j] = buffer[id][j - 1];
+    
+    buffer[id][0] = analogRead(pins[id]);
+
+    if(buffer[id][0] < threshold){
+        for(int j = 0; j < LASER_BUFFER_SIZE; j++){
+            if(buffer[id][j] >= threshold)
+                return false;
         }
+        
+        return true;
     }
 
-    return -1;
+    return false;
 }
 
 Endstop_array::Endstop_array(Stepper_array *motors_, int end1_pin, int end2_pin, int end3_pin, int end4_pin){
@@ -52,19 +65,41 @@ Endstop_array::Endstop_array(Stepper_array *motors_, int end1_pin, int end2_pin,
 
 void Endstop_array::invert_input(){
     inverted = !inverted;
+    for(int i = 0; i < 4; i++)
+        initial_unpressed[i] = !initial_unpressed[i];
+}
+
+void Endstop_array::check_initial(){
+    for(int i = 0; i < 4; i++)
+        initial_unpressed[i] = !digitalRead(pins[i]);
 }
 
 void Endstop_array::check(){
     for(int i = 0; i < 4; i++){
         double current_speed = motors -> get_speed(i);
+        int8_t current_dir = current_speed / abs(current_speed);
 
         if(digitalRead(pins[i]) != inverted){
-            if(current_speed == stopped_dir[i] || stopped_dir[i] == 0){
-                stopped_dir[i] = current_speed / abs(current_speed);
-                motors -> set_speed(i, 0);
+            if(initial_unpressed[i] && stopped_dir[i] == 0){
+                stopped_dir[i] = current_dir;
+
+                if(waiting_to_stop[i] != 0)
+                    waiting_to_stop[i] = millis() + ENDSTOP_CHECK_TIME;
             }
         }
-        else
+        else{
             stopped_dir[i] = 0;
+            motors -> unlock_dir(i);
+            initial_unpressed[i] = true;
+
+            waiting_to_stop[i] = 0;
+        }
+
+        if(waiting_to_stop[i] != 0 && millis() >= waiting_to_stop[i]){
+            motors -> set_speed(i, 0);
+            motors -> lock_dir(i, stopped_dir[i]);
+
+            waiting_to_stop[i] = 0;
+        }
     }
 }

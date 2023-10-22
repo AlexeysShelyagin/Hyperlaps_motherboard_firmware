@@ -48,6 +48,7 @@ void setup() {
     pinMode(MOTOR_ENABLE, OUTPUT);
     //digitalWrite(MOTOR_ENABLE, 1);
 
+    endstops.check_initial();
     endstops.invert_input();
 
     wifi.init();
@@ -59,51 +60,88 @@ void setup() {
     wifi.add_gamepad(gamepad4_mac);
 #endif
 
+    for(uint8_t i = 0; i < 4; i++)
+        wifi.send_score(10, i);
+
     Serial.println("initialized");
 }
 
 double speeds[4] = {DEFAULT_SPEED, DEFAULT_SPEED, DEFAULT_SPEED, DEFAULT_SPEED};
 int8_t stick_states[4] = {0, 0, 0, 0};
 uint64_t last_accel_call[4] = {0, 0, 0, 0};
-int8_t goal_id;
+bool is_goal;
+//int8_t goal_id = -1;
 
-uint64_t last = 0;
+uint64_t iteration = 0;
+uint8_t goal_check_id = 0;
 
 void loop() {
-    Game_wifi::Updates updates = wifi.get_updates();
+    if(iteration % 50 == 0){
+        Game_wifi::Updates updates = wifi.get_updates();
 
-    if(updates.success){        
-        if(updates.button)
-            solenoids[updates.id].fire();
+#ifndef LASER_DISABLE
+        if(iteration % 100 == 0){
+            is_goal = goal_sensor.check(goal_check_id);
+            if(is_goal){
+                bool paused = true;
+                wifi.send_score(-1, goal_check_id);
+            
+                while(paused){
+                    Game_wifi::Updates updates = wifi.get_updates();
+                    if(updates.success && updates.button && updates.id == goal_check_id){
+                        paused = false;
+                        updates.success = false;
 
-        if(stick_states[updates.id] != updates.stick){
-            stick_states[updates.id] = updates.stick;
-            speeds[updates.id] = START_SPEED;
+                        for(int i = 0; i < 4; i++)
+                            motors.set_speed(i, 0);
+                    }
+                    
+                    delay(10);
+                }
+                
+            }
+
+            goal_check_id++;
+            goal_check_id %= 4;
         }
-    }
+#endif
 
-    goal_id = goal_sensor.check();
-    if(goal_id != -1){
+        if(updates.success){  
+            if(updates.button)
+                solenoids[updates.id].fire();
 
+            if(INVERT_MOTORS)
+                updates.stick = -updates.stick;
+
+            if(stick_states[updates.id] != updates.stick){
+                stick_states[updates.id] = updates.stick;
+                speeds[updates.id] = START_SPEED;
+            }
+        }
+
+        endstops.check();
+
+        for(int i = 0; i < 4; i++)
+            solenoids[i].update();
+
+        iteration %= 200;
     }
 
     for(int i = 0; i < 4; i++){
         if(speeds[i] < DEFAULT_SPEED){
-            if(micros() - last_accel_call[i] > 700){
+            if(micros() - last_accel_call[i] > 1500){
                 motors.set_speed(i, stick_states[i] * speeds[i]);
                 speeds[i] += 1;
                 last_accel_call[i] = micros();
             }
         }
-
-        solenoids[i].update();
     }
-
-    endstops.check();
 
     motors.step(0);
     motors.step(1);
     motors.step(2);
     motors.step(3);
     motors.send();
+
+    iteration++;
 }
